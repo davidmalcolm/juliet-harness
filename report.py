@@ -78,6 +78,7 @@ class TextReport:
     def __init__(self):
         self.passes = 0
         self.failures = 0
+        self.skipped = 0
 
     def report_issue(self, result, expectation, issue):
         if result != 'PASS':
@@ -100,11 +101,19 @@ class TextReport:
     def unexpected_issue(self, actual_issue):
         self.report_issue('FAIL', 'unexpected', actual_issue)
 
+    def skip_path(self, givenpath):
+        self.skipped += 1
+
     def summary(self):
         print('# of passes   %i' % self.passes)
         print('# of failures %i' % self.failures)
+        print('# of skipped  %i' % self.skipped)
 
-def compare_analyses(expected, actual, report):
+class Policy:
+    def skip_path(self, givenpath):
+        raise NotImplementedError
+
+def compare_analyses(expected, actual, report, policy):
     """
     Compare EXPECTED and ACTUAL; call into REPORT
     for issues found in both, or just in one.
@@ -115,6 +124,9 @@ def compare_analyses(expected, actual, report):
     for givenpath in sorted(givenpaths):
         #print(givenpath)
         if givenpath in expected_by_givenpath:
+            if policy.skip_path(givenpath):
+                report.skip_path(givenpath)
+                continue
             if givenpath in actual_by_givenpath:
                 # Present in both.  We can't rely on precise line numbers, so for now
                 # simply emit that we found the issue.
@@ -140,13 +152,15 @@ args = parser.parse_args()
 m = parse_manifest(args.manifest_filename)
 a = parse_make_log(args.make_log)
 
-def criteria(r):
-    givenpath = r.location.file.givenpath
-    return (givenpath.startswith('CWE415_Double_Free')
-            and givenpath.endswith('.c'))
-
-m.results = filter(criteria, m.results)
+class MyPolicy(Policy):
+    def skip_path(self, givenpath):
+        if not givenpath.startswith('CWE415_Double_Free'):
+            return True
+        if not givenpath.endswith('.c'):
+            return True
+        return False
 
 report = TextReport()
-compare_analyses(m, a, report)
+policy = MyPolicy()
+compare_analyses(m, a, report, policy)
 report.summary()
