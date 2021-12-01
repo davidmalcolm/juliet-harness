@@ -18,6 +18,7 @@
 #   USA
 
 import argparse
+from fnmatch import fnmatch
 import re
 import xml.etree.ElementTree as ET
 
@@ -169,6 +170,14 @@ class MyPolicy(Policy):
             return True
         if is_lto_case(givenpath):
             return True
+
+        # Juliet's Makefiles have:
+        #   FILTER_OUT=$(wildcard CWE*w32*.c*) $(wildcard CWE*wchar_t*.c*)
+        if fnmatch(givenpath, 'CWE*w32*.c*'):
+            return True
+        if fnmatch(givenpath, 'CWE*wchar_t*.c*'):
+            return True
+
         return False
 
 report = TextReport()
