@@ -162,10 +162,94 @@ args = parser.parse_args()
 m = parse_manifest(args.manifest_filename)
 a = parse_make_log(args.make_log)
 
+# Tests to skip since -fanalyzer doesn't implement them
+# (or doesn't implement them yet)
+UNIMPLEMENTED_TESTS = ['Addition_of_Data_Structure_Sentinel',
+                       'Assigning_Instead_of_Comparing', # TODO: use -Wall ?
+                       'Assignment_of_Fixed_Address_to_Pointer',
+                       'Attempt_to_Access_Child_of_Non_Structure_Pointer',
+                       'Buffer_Overflow',
+                       'Buffer_Underwrite',
+                       'Buffer_Overread',
+                       'Buffer_Underread',
+                       'Comparing_Instead_of_Assigning', # TODO: use -Wall ?
+                       'Dead_Code',
+                       'Divide_by_Zero',
+                       'Duplicate_Operations_on_Resource',
+                       'Embedded_Malicious_Code',
+                       'Error_Without_Action',
+                       'Expression_Always_False', # TODO: use -Wall ?
+                       'Expression_Always_True', # TODO: use -Wall ?
+                       'Function_Call_With_Incorrect_Number_of_Arguments', # TODO: use -Wall ?
+                       'Function_Call_With_Incorrect_Variable_or_Reference_as_Argument', # TODO: use -Wall ?
+                       'Improper_Initialization',
+                       'Improper_Locking',
+                       'Incorrect_Block_Delimitation', # TODO: use -Wall ?
+                       'Incorrect_Check_of_Function_Return_Value',
+                       'Incorrect_Conversion_Between_Numeric_Types',
+                       'Incorrect_Pointer_Scaling',
+                       'Infinite_Loop',
+                       'Info_Exposure_Environment_Variables',
+                       'Insecure_Temporary_File',
+                       'Integer_Overflow',
+                       'Integer_Underflow',
+                       'Logic_Time_Bomb',
+                       'Missing_Default_Case_in_Switch', # TODO: use -Wall ?
+                       'Missing_Reference_to_Active_File_Descriptor_or_Handle',
+                       'Missing_Release_of_File_Descriptor_or_Handle',
+                       'Multiple_Binds_Same_Port',
+                       'Numeric_Truncation_Error',
+                       'Omitted_Break_Statement_in_Switch', # TODO: use -Wall ?
+                       'Operation_on_Resource_in_Wrong_Phase_of_Lifetime',
+                       'OS_Command_Injection',
+                       'Poor_Code_Quality',
+                       'Race_Condition_Within_Thread',
+                       'Reachable_Assertion',
+                       'Reliance_on_Data_Memory_Layout',
+                       'Resource_Exhaustion',
+                       'Signal_Handler_Race_Condition',
+                       'Signed_to_Unsigned_Conversion_Error',
+                       'Suspicious_Comment',
+                       'TOC_TOU',
+                       'Trapdoor',
+                       'Type_Confusion',
+                       'Unchecked_Error_Condition',
+                       'Unchecked_Return_Value',
+                       'Untrusted_Search_Path',
+                       'Unchecked_Loop_Condition',
+                       'Uncontrolled_Format_String',
+                       'Uncontrolled_Mem_Alloc',
+                       'Uncontrolled_Search_Path_Element',
+                       'Undefined_Behavior_for_Input_to_API',
+                       'Unexpected_Sign_Extension',
+                       'Unlock_of_Resource_That_is_Not_Locked',
+                       'Unsigned_to_Signed_Conversion_Error',
+                       'Unused_Variable', # TODO: use -Wall ?
+                       'Use_of_Incorrect_Operator',
+                       'Use_of_Pointer_Subtraction_to_Determine_Size',
+                       'Use_of_sizeof_on_Pointer_Type', # TODO: use -Wall ?
+                       'Write_What_Where_Condition']
+
+# Tests that ought to work, but aren't for some reason
+# (and need investigating)
+TESTS_TO_INVESTIGATE = ['Free_Memory_Not_on_Heap',
+                        'Free_Pointer_Not_at_Start_of_Buffer',
+                        'Improper_Resource_Shutdown',
+                        'Incomplete_Cleanup',
+                        'Memory_Leak',
+                        'NULL_Deref_From_Return',
+                        'Uncontrolled_Recursion',
+                        'Use_of_Uninitialized_Variable']
+
 class MyPolicy(Policy):
     def skip_path(self, givenpath):
-        if not givenpath.startswith('CWE415_Double_Free'):
-            return True
+        for test_name in UNIMPLEMENTED_TESTS:
+            if test_name in givenpath:
+                return True
+        for test_name in TESTS_TO_INVESTIGATE:
+            if test_name in givenpath:
+                return True
+
         if not givenpath.endswith('.c'):
             return True
         if is_lto_case(givenpath):
