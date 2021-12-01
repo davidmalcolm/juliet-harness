@@ -18,6 +18,7 @@
 #   USA
 
 import argparse
+import re
 import xml.etree.ElementTree as ET
 
 from firehose.parsers.gcc import parse_file
@@ -141,6 +142,14 @@ def compare_analyses(expected, actual, report, policy):
             for actual_issue in actual_by_givenpath[givenpath]:
                 report.unexpected_issue(actual_issue)
 
+def is_lto_case(givenpath):
+    """
+    Juliet's Makefile has letter suffixes for cross-TU testcases e.g.
+      CWE415_Double_Free__malloc_free_char_22a.c
+      CWE415_Double_Free__malloc_free_char_22b.c
+    Identify such testcases.
+    """
+    return re.match('^.*_[0-9]+[a-z].c$', givenpath)
 
 parser = argparse.ArgumentParser(description='Compare a SARD manifest.xml with a make log')
 parser.add_argument('manifest_filename', metavar='MANIFEST.XML', type=str,
@@ -157,6 +166,8 @@ class MyPolicy(Policy):
         if not givenpath.startswith('CWE415_Double_Free'):
             return True
         if not givenpath.endswith('.c'):
+            return True
+        if is_lto_case(givenpath):
             return True
         return False
 
